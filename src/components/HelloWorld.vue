@@ -8,8 +8,17 @@
         :options="options"
       ></b-form-select>
     </b-form>
-    <div class="image-wrapper">
-      <img class="image-item" v-for="(item, index) in responseData" v-bind:key="index" :src="item.primaryImageSmall" :alt="item.objectName">
+    <div class="loader" v-if="loading">
+      <img  src="../assets/1_9EBHIOzhE1XfMYoKz1JcsQ.gif" alt="loader">
+    </div>    
+    <div class="image-wrapper" v-else>
+      <img 
+        class="image-item" 
+        v-for="(item, index) in responseData" 
+        v-bind:key="index" 
+        :src="item.primaryImageSmall" 
+        :alt="item.objectName"
+      >
     </div>
   </b-container>
 </template>
@@ -17,13 +26,14 @@
 <script>
 import axios from 'axios'
 import rateLimit from 'axios-rate-limit';
-import analyze from 'rgbaster'
+import { cacheAdapterEnhancer} from 'axios-extensions';
 export default {  
   name: "HelloWorld",
 
   data() {
     return {
       selected: null,
+      loading: true,
       options: [
         { value: null, text: "Please select an option" },
         { value: "red", text: "Red" },
@@ -36,24 +46,10 @@ export default {
   },
 
   mounted(){
-    this.getImages()
-
-    const container = document.querySelector('.image-container');
-
-    const fac = new FastAverageColor();
-    fac.getColorAsync(document.querySelectorAll('.image-item'))
-    .then(color => {
-      console.log("color", color);
-        container.style.backgroundColor = color.rgba;
-        container.style.color = color.isDark ? '#fff' : '#000';
-    })
-    .catch(e => {
-        console.log(e);
-    });
-  },
-
-  сomputed: {
-   
+    const cachedResponse = window.localStorage.getItem('items');
+    cachedResponse && cachedResponse.length ? 
+      (this.responseData = [...JSON.parse(cachedResponse)], this.loading = false) : 
+      this.getImages()
   },
 
   methods: {
@@ -65,7 +61,9 @@ export default {
           `https://collectionapi.metmuseum.org/public/collection/v1/objects/${date}`
       );
 
-      const http = rateLimit(axios.create(), { maxRequests: 50, perMilliseconds: 1000, maxRPS: 50 })
+      const http = rateLimit(axios.create({
+        adapter: cacheAdapterEnhancer(axios.defaults.adapter)
+      }), { maxRequests: 50, perMilliseconds: 1000, maxRPS: 50 })
 
       function getAllData(urls) {
         return Promise.all(urls.map(fetchData));
@@ -74,9 +72,7 @@ export default {
       async function fetchData(URL) {
         try {
           const response = await http.get(URL);
-          // console.log('response', response);
           if (response.data && response.status === 200) {
-            console.log('test', response);
             return response.data;
           }
         } catch (error) {
@@ -87,11 +83,10 @@ export default {
       getAllData(urls)
         .then((resp) => {
           const filteredData = resp.filter(i => i !== undefined && i.primaryImageSmall).slice(0, 103)
-          // filteredData.map(i => {
-          //   const result = await analyze(i.primaryImageSmall, { ignore: [ 'rgb(255,255,255)', 'rgb(0,0,0)' ] })
-          // })
-          // const result = await analyze('/image.png', { ignore: [ 'rgb(255,255,255)', 'rgb(0,0,0)' ] })
           this.responseData = [...filteredData]
+          const dataToStore = JSON.stringify(filteredData);
+          window.localStorage.setItem('items', dataToStore);
+          this.loading = false
         })
         .catch((e) => {
           console.log(e.message);
@@ -101,24 +96,40 @@ export default {
 };
 </script>
 <style lang="scss">
-form{  
-  label{
-    padding: 0 15px;  
+body{
+  position: relative;
+  form{  
+    label{
+      padding: 0 15px;  
+    }
   }
-}
-.image{
-  &-wrapper{
+  .image{
+    &-wrapper{
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+    &-item{
+      width: 100%;
+      max-width: 15%;
+      height: 200px;
+      padding: 15px;
+      object-fit: contain;
+    }
+  }
+  .loader{
+    width: 100vw;
+    height: 100vh;
+    position: absolute;
     display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-  }
-  &-item{
-    width: 100%;
-    max-width: 33%;
-    height: 500px;
-    padding: 15px;
+    img{
+      height: initial;
+      width: initial;
+      margin: auto;
+    }
   }
 }
+
 </style>
