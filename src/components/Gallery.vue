@@ -9,7 +9,7 @@
       ></b-form-select>
     </b-form>
     <div class="loader" v-if="loading">
-      <img  src="../assets/1_9EBHIOzhE1XfMYoKz1JcsQ.gif" alt="loader">
+      <img  src="../assets/spiner.gif" alt="loader">
     </div>    
     <div class="image-wrapper" v-else>
       <img 
@@ -28,7 +28,7 @@ import axios from 'axios'
 import rateLimit from 'axios-rate-limit';
 import { cacheAdapterEnhancer} from 'axios-extensions';
 export default {  
-  name: "HelloWorld",
+  name: "Gallery",
 
   data() {
     return {

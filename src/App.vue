@@ -1,19 +1,15 @@
 <template>
-  <HelloWorld />
+  <Gallery />
 </template>
 
 <script>
-import HelloWorld from "./components/HelloWorld";
+import Gallery from "./components/Gallery";
 
 export default {
   name: "App",
 
   components: {
-    HelloWorld,
+    Gallery,
   },
-
-  data: () => ({
-    //
-  }),
 };
 </script>
