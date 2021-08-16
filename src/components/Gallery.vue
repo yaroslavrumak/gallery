@@ -20,6 +20,10 @@
         :alt="item.objectName"
       >
     </div>
+
+    <b-modal id="modal-1" @ok="handleOk" ok-only>
+        <div class="d-block">Request failed, try again by clicking OK</div>
+    </b-modal>
   </b-container>
 </template>
 
@@ -53,6 +57,12 @@ export default {
   },
 
   methods: {
+    showModal() {
+        this.$root.$emit('bv::show::modal', 'modal-1')
+    },
+    handleOk(){
+        window.location.reload()
+    },
     getImages(){
       const lastThirtyDays = [ ...Array(200).keys() ].map( i => i+200);
 
@@ -63,7 +73,7 @@ export default {
 
       const http = rateLimit(axios.create({
         adapter: cacheAdapterEnhancer(axios.defaults.adapter)
-      }), { maxRequests: 50, perMilliseconds: 1000, maxRPS: 50 })
+      }), { maxRequests: 80, perMilliseconds: 1000, maxRPS: 80 })
 
       function getAllData(urls) {
         return Promise.all(urls.map(fetchData));
@@ -76,7 +86,7 @@ export default {
             return response.data;
           }
         } catch (error) {
-          console.log('error2', error);
+          console.log('error', error);
         }
       }
 
@@ -88,8 +98,8 @@ export default {
           window.localStorage.setItem('items', dataToStore);
           this.loading = false
         })
-        .catch((e) => {
-          console.log(e.message);
+        .catch(() => {
+          this.showModal()
         });
     }
   }
